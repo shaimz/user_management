@@ -1,0 +1,7 @@
+RewriteEngine On
+
+# Redirect from root to /admin/
+RewriteRule ^$ /admin/ [R=301,L]
+
+# Then, internally rewrite /admin/ to /admin/index.php
+RewriteRule ^admin/?$ admin/index.php [L]
