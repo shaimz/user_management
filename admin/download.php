@@ -6,7 +6,7 @@ include('includes/config.php');
 
 if(strlen($_SESSION['alogin'])==0)
 {
-    header("Location: index.php");
+    header("Location: /admin/index.php");
 }
 else
 {
@@ -64,10 +64,6 @@ if($query->rowCount() > 0)
         ';
         $cnt++;
     }
-    header("Content-Type: application/octet-stream");
-    header("Content-Disposition: attachment; filename=".$filename."-report.xls");
-    header("Pragma: no-cache");
-    header("Expires: 0");
 }
 ?>
 </table>

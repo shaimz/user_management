@@ -2,6 +2,13 @@
 session_start();
 include('includes/config.php');
 
+// Check if the current URL is /index.php
+if (in_array($_SERVER['REQUEST_URI'], array('/index.php', '/'))) {
+    // Redirect to /admin/index.php
+    header("Location: /admin/index.php");
+    exit();
+}
+
 var_dump($_POST);
 if(isset($_POST['login']))
 {

@@ -2,8 +2,6 @@
 
 require 'vendor/autoload.php';
 
-include "./includes/config.php";
-
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 $filepath = realpath(dirname(__FILE__));
@@ -35,20 +33,37 @@ $serializedHeaders = array_keys($columnHeaders);
 $tableName = 'users';
 $checkTableExists = $dbh->query("SHOW TABLES LIKE '$tableName'")->rowCount();
 
-if ($checkTableExists == 0) {
-    $createTableQuery = "CREATE TABLE $tableName (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        " . implode(" VARCHAR(255), ", array_map(function($header) {
-            return str_replace(' ', '_', $header);
-        }, $serializedHeaders)) . " VARCHAR(255)
-    )";
+$createTableQuery = "CREATE TABLE IF NOT EXISTS $tableName (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    " . implode(" VARCHAR(255), ", array_map(function($header) {
+        return str_replace(' ', '_', $header);
+    }, $serializedHeaders)) . " VARCHAR(255)
+)";
 
-    $dbh->exec($createTableQuery);
+$dbh->exec($createTableQuery);
 
-    // Insert serialized headers into the table
-    $insertHeadersQuery = "INSERT INTO $tableName (headers) VALUES (?)";
-    $stmt = $dbh->prepare($insertHeadersQuery);
-    $stmt->execute($serializedHeaders);
+try {
+    // Get existing columns from the table
+    $existingColumnsQuery = $dbh->query("SHOW COLUMNS FROM $tableName");
+    $existingColumns = $existingColumnsQuery->fetchAll(PDO::FETCH_COLUMN);
+    $existingColumnNames = array_map(function($col){
+        return strtolower($col); // Making it case-insensitive
+    }, $existingColumns);
+
+    // Loop through headers to check & add any new columns
+    foreach ($serializedHeaders as $header) {
+        $header = str_replace(' ', '_', $header); // Prepare header as column name
+        if (!in_array(strtolower($header), $existingColumnNames)) { // Check if the column exists, ignore case
+            $addColumnQuery = "ALTER TABLE $tableName ADD COLUMN $header VARCHAR(255)";
+            $dbh->exec($addColumnQuery);
+        }
+    }
+} catch (PDOException $e) {
+    die("Error updating table: " . $e->getMessage());
+}
+finally {
+    // refresh page
+    header("Location: /admin/index.php");
 }
 
 
